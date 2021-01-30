@@ -7,11 +7,15 @@ module Fastlane
       def self.run(params)
         bundle_path = params[:src_bundle_path]
         package_path = params[:package]
+        verbose = params[:verbose]
         Dir.mktmpdir do |dir|
-          tmppkgpath=File.join(dir,tmppkgpath)
+          tmppkgpath=File.join(dir,"Package")
           Dir.mkdir(tmppkgpath)
-          FileUtils.cp_r(bundle_path, tmppkgpath, :verbose => true )
-          puts Dir.glob("*")
+          FileUtils.cp_r(bundle_path, tmppkgpath)
+          Actions.sh(
+            "xcrun pkgbuild --root \"#{tmppkgpath}\" --analyze bundle.plist",
+            log: verbose
+        )
         end
         UI.message("The pkgbuild_installer plugin is working!")
       end
@@ -48,7 +52,13 @@ module Fastlane
                                        is_string: true,
                                        verify_block: proc do |value|
                                          UI.user_error!("Could not find package at '#{value}'") unless File.exist?(value)
-                                       end)
+                                       end),
+             FastlaneCore::ConfigItem.new(key: :verbose,
+                                        env_name: 'FL_PKGBUILD_VERBOSE',
+                                        description: 'Whether to log requests',
+                                        optional: true,
+                                        default_value: false,
+                                        type: Boolean)
         ]
       end
 
