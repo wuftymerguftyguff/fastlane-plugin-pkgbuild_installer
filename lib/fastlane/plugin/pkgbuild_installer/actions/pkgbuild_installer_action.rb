@@ -6,6 +6,7 @@ module Fastlane
     class PkgbuildInstallerAction < Action
       def self.run(params)
         bundle_path = params[:src_bundle_path]
+        bundle_path_last =  File.basename(bundle_path)
         package_path = params[:package]
         verbose = params[:verbose]
         Dir.mktmpdir do |dir|
@@ -15,7 +16,14 @@ module Fastlane
           Actions.sh(
             "xcrun pkgbuild --root \"#{tmppkgpath}\" --analyze bundle.plist",
             log: verbose
-        )
+          )
+          # get identifier from bundle
+          infoplistpath=File.join(dir,"Package",bundle_path_last,"Contents","Info.plist")
+          bundleidentifier = other_action.get_info_plist_value(path: infoplistpath, key: "CFBundleIdentifier")
+
+          # get version from bundle
+          bundleversion = other_action.get_info_plist_value(path: infoplistpath, key: "CFBundleShortVersionString")
+
         end
         UI.message("The pkgbuild_installer plugin is working!")
       end
