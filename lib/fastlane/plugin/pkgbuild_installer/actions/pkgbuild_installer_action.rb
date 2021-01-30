@@ -8,6 +8,7 @@ module Fastlane
         # from params
         bundle_path = params[:src_bundle_path]
         package_path = params[:package]
+        installer_cert_name = params[:installer_cert_name]
         relocatable = params[:relocatable]
         verbose = params[:verbose]
 
@@ -77,10 +78,7 @@ module Fastlane
             FastlaneCore::ConfigItem.new(key: :package,
                                        env_name: 'FL_PKGBUILD_TGT_PACKAGE',
                                        description: 'Path to installer package we will build',
-                                       is_string: true,
-                                       verify_block: proc do |value|
-                                         UI.user_error!("Could not find package at '#{value}'") unless File.exist?(value)
-                                       end),
+                                       is_string: true),
             FastlaneCore::ConfigItem.new(key: :src_bundle_path,
                                        env_name: 'FL_PKGBUILD_SRC_BUNDLE',
                                        description: 'Path to  bundle to package e.g. .app bundle',
@@ -88,6 +86,11 @@ module Fastlane
                                        verify_block: proc do |value|
                                          UI.user_error!("Could not find package at '#{value}'") unless File.exist?(value)
                                        end),
+            FastlaneCore::ConfigItem.new(key: :installer_cert_name,
+                                      env_name: 'FL_PKGBUILD_INSTALLER_CERT',
+                                      description: 'Full name of 3rd Party Mac Developer Installer or Developer ID Installer certificate. Example: 3rd Party Mac Developer Installer: Your Company (ABC1234XWYZ)',
+                                      optional: false,
+                                      is_string: true),
             FastlaneCore::ConfigItem.new(key: :verbose,
                                       env_name: 'FL_PKGBUILD_VERBOSE',
                                       description: 'Whether to log requests',
