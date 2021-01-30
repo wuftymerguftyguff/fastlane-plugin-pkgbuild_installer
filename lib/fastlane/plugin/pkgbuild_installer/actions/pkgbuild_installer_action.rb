@@ -8,7 +8,7 @@ module Fastlane
         bundle_path = params[:src_bundle_path]
         package_path = params[:package]
         Dir.mktmpdir do |dir|
-          tmppkgpath="./Package"
+          tmppkgpath=File.join(dir,tmppkgpath)
           Dir.mkdir(tmppkgpath)
           FileUtils.cp_r(bundle_path, tmppkgpath, :verbose => true )
           puts Dir.glob("*")
