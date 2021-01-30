@@ -5,16 +5,22 @@ module Fastlane
   module Actions
     class PkgbuildInstallerAction < Action
       def self.run(params)
+        # from params
         bundle_path = params[:src_bundle_path]
-        bundle_path_last =  File.basename(bundle_path)
         package_path = params[:package]
+        relocatable = params[:relocatable]
         verbose = params[:verbose]
+
+        # derived from params
+        bundle_path_last =  File.basename(bundle_path)
+
         Dir.mktmpdir do |dir|
           tmppkgpath=File.join(dir,"Package")
+          analysisplistpath = File.join(dir,"bundle.plist")
           Dir.mkdir(tmppkgpath)
           FileUtils.cp_r(bundle_path, tmppkgpath)
           Actions.sh(
-            "xcrun pkgbuild --root \"#{tmppkgpath}\" --analyze bundle.plist",
+            "xcrun pkgbuild --root \"#{tmppkgpath}\" --analyze \"#{analysisplistpath}\"",
             log: verbose
           )
           # get identifier from bundle
@@ -24,6 +30,27 @@ module Fastlane
           # get version from bundle
           bundleversion = other_action.get_info_plist_value(path: infoplistpath, key: "CFBundleShortVersionString")
 
+          # get BundleIsRelocatable from bundle analysis
+          puts analysisplistpath
+
+
+          bundleisrelocatable = Actions.sh(
+             "/usr/libexec/PlistBuddy -c \"Print :0:BundleIsRelocatable\" \"#{analysisplistpath}\"",
+             log: verbose
+           ).strip
+
+
+          # update analysis plist as required
+
+          Actions.sh(
+            "/usr/libexec/PlistBuddy -c  \"set :0:BundleIsRelocatable \"#{relocatable}\"\" \"#{analysisplistpath}\"",
+            log: verbose
+          )
+
+            bundleisrelocatable = Actions.sh(
+               "/usr/libexec/PlistBuddy -c \"Print :0:BundleIsRelocatable\" \"#{analysisplistpath}\"",
+               log: verbose
+             ).strip
         end
         UI.message("The pkgbuild_installer plugin is working!")
       end
@@ -61,12 +88,18 @@ module Fastlane
                                        verify_block: proc do |value|
                                          UI.user_error!("Could not find package at '#{value}'") unless File.exist?(value)
                                        end),
-             FastlaneCore::ConfigItem.new(key: :verbose,
-                                        env_name: 'FL_PKGBUILD_VERBOSE',
-                                        description: 'Whether to log requests',
-                                        optional: true,
-                                        default_value: false,
-                                        type: Boolean)
+            FastlaneCore::ConfigItem.new(key: :verbose,
+                                      env_name: 'FL_PKGBUILD_VERBOSE',
+                                      description: 'Whether to log requests',
+                                      optional: true,
+                                      default_value: false,
+                                      type: Boolean),
+            FastlaneCore::ConfigItem.new(key: :relocatable,
+                                      env_name: 'FL_PKGBUILD_RELOCATABLE',
+                                      description: 'Whether to build a relocatable install package',
+                                      optional: true,
+                                      default_value: false,
+                                      type: Boolean)
         ]
       end
 
