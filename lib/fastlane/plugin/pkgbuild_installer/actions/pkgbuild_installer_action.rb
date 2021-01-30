@@ -7,6 +7,12 @@ module Fastlane
       def self.run(params)
         bundle_path = params[:src_bundle_path]
         package_path = params[:package]
+        Dir.mktmpdir do |dir|
+          tmppkgpath="./Package"
+          Dir.mk(tmppkgpath)
+          FileUtils.cp_r(bundle_path, tmppkgpath, :verbose => true )
+          puts Dir.glob("*")
+        end
         UI.message("The pkgbuild_installer plugin is working!")
       end
 
