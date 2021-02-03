@@ -10,6 +10,7 @@ module Fastlane
         package_path = params[:package]
         installer_cert_name = params[:installer_cert_name]
         relocatable = params[:relocatable]
+        app_install_path = params[:app_install_path]
         verbose = params[:verbose]
 
         # derived from params
@@ -52,6 +53,33 @@ module Fastlane
                "/usr/libexec/PlistBuddy -c \"Print :0:BundleIsRelocatable\" \"#{analysisplistpath}\"",
                log: verbose
              ).strip
+
+          # make the package
+      #    pkgbuild --identifier "com.wuftymerguftyguff.sqrl1" \
+      #        --sign "Developer ID Installer: Jeff Arthur (5K4VSQFL57)" \
+      #        --root "./build" \
+      #        --component-plist "./sqrl.plist" \
+      #        --install-location "/Applications" \
+      #        --version "$buildVersion" \
+      #        "./sqrl.pkg"
+
+          pkgcmd = [
+                "xcrun pkgbuild",
+                " --identifier \"#{bundleidentifier}\"",
+                " --sign \"#{installer_cert_name}\"",
+                " --root \"#{tmppkgpath}\"",
+                " --component-plist \"#{analysisplistpath}\"",
+                " --install-location \"#{app_install_path}\"",
+                " --version \"#{bundleversion}\"",
+                " \"#{package_path}\""
+            #    " \"#{package}\"",
+            ].join
+
+          Actions.sh(
+          pkgcmd,
+            log:verbose
+          )
+
         end
         UI.message("The pkgbuild_installer plugin is working!")
       end
@@ -102,7 +130,13 @@ module Fastlane
                                       description: 'Whether to build a relocatable install package',
                                       optional: true,
                                       default_value: false,
-                                      type: Boolean)
+                                      type: Boolean),
+            FastlaneCore::ConfigItem.new(key: :app_install_path,
+                                      env_name: 'FL_PKGBUILD_INSTALL_PATH',
+                                      description: 'Path to which the provided app bundle will be installed',
+                                      is_string: true,
+                                      optional: false,
+                                      default_value: "/Applications"),
         ]
       end
 
